@@ -59,7 +59,7 @@ function App() {
       {/* === DESKTOP SIDEBAR === */}
       <aside className="hidden md:flex flex-col w-60 lg:w-64 fixed top-0 left-0 bottom-0 z-40" style={{ background: 'var(--bg-sidebar)', boxShadow: '2px 0 8px rgba(0,0,0,0.04)', transition: 'background 0.3s' }}>
         <div className="px-5 py-5 flex items-center gap-3">
-          <img src="/images/logo.png" alt="Majestic" className="w-10 h-10 rounded-full" style={{ border: '2px solid var(--gold)' }} />
+          <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Majestic" className="w-10 h-10 rounded-full" style={{ border: '2px solid var(--gold)' }} />
           <div>
             <h1 className="text-[15px] font-medium tracking-[3px] italic" style={{ color: 'var(--navy)', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>MAJESTIC</h1>
             <p className="text-[10px] tracking-wider" style={{ color: 'var(--gold)' }}>FOOD CONTROL PLAN</p>
@@ -113,7 +113,7 @@ function App() {
           <aside className="fixed top-0 left-0 bottom-0 w-72 z-50 md:hidden flex flex-col" style={{ background: 'var(--bg-sidebar)', animation: 'slideRight 0.2s ease' }}>
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src="/images/logo.png" alt="Majestic" className="w-9 h-9 rounded-full" style={{ border: '2px solid var(--gold)' }} />
+                <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Majestic" className="w-9 h-9 rounded-full" style={{ border: '2px solid var(--gold)' }} />
                 <span className="text-[15px] font-medium tracking-[3px] italic" style={{ color: 'var(--navy)', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>MAJESTIC</span>
               </div>
               <button onClick={() => setSidebarOpen(false)} className="p-2" style={{ color: 'var(--text-faint)' }}><X size={18} /></button>
@@ -159,7 +159,7 @@ function App() {
           <div className="px-4 py-2.5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button onClick={() => setSidebarOpen(true)} className="p-1 -ml-1" style={{ color: dark ? 'var(--text-muted)' : 'rgba(255,255,255,0.8)' }}><Menu size={20} /></button>
-              <img src="/images/logo.png" alt="Majestic" className="w-7 h-7 rounded-full" style={{ border: `1.5px solid ${dark ? 'var(--gold)' : '#b8a472'}` }} />
+              <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Majestic" className="w-7 h-7 rounded-full" style={{ border: `1.5px solid ${dark ? 'var(--gold)' : '#b8a472'}` }} />
               <span className="text-sm font-medium tracking-[2px] italic" style={{ color: dark ? 'var(--navy)' : 'white', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>MAJESTIC</span>
             </div>
             <div className="flex items-center gap-2">
@@ -202,7 +202,7 @@ function App() {
             {tab === 'home' && (
               <div className="px-4 md:px-6 lg:px-8 pt-6 pb-4">
                 <div className="card p-5 md:p-6 mb-6 text-center">
-                  <img src="/images/logo.png" alt="Majestic" className="w-16 h-16 rounded-full mx-auto mb-3" style={{ border: '2px solid var(--gold)' }} />
+                  <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Majestic" className="w-16 h-16 rounded-full mx-auto mb-3" style={{ border: '2px solid var(--gold)' }} />
                   <h2 className="text-xl font-medium tracking-[3px] italic" style={{ color: 'var(--navy)', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>MAJESTIC</h2>
                   <p className="text-xs tracking-widest mt-1" style={{ color: 'var(--gold)' }}>TEA BAR</p>
                   <div className="divider my-4 mx-auto max-w-[200px]" />
