@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Thermometer, ClipboardCheck, SprayCan, Users, MoreHorizontal, MessageSquareWarning, AlertTriangle, CalendarCheck, User, X, ChevronRight, Menu, Moon, Sun } from 'lucide-react';
+import { Thermometer, ClipboardCheck, SprayCan, Users, MoreHorizontal, MessageSquareWarning, AlertTriangle, CalendarCheck, User, X, Menu, Moon, Sun } from 'lucide-react';
 import { loadStr, saveStr } from './lib/storage';
 import TemperatureChecks from './components/TemperatureChecks';
 import DailyDiary from './components/DailyDiary';
@@ -154,8 +154,8 @@ function App() {
       {/* === MAIN === */}
       <div className="flex-1 md:ml-60 lg:ml-64 min-h-screen flex flex-col">
 
-        {/* Mobile Header */}
-        <div className="sticky top-0 z-30 md:hidden" style={{ background: dark ? 'var(--bg-sidebar)' : '#002e6d', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', paddingTop: 'max(4px, env(safe-area-inset-top))' }}>
+        {/* Mobile Header (hidden on home) */}
+        <div className={`sticky top-0 z-30 md:hidden ${tab === 'home' ? 'hidden' : ''}`} style={{ background: dark ? 'var(--bg-sidebar)' : '#002e6d', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', paddingTop: 'max(4px, env(safe-area-inset-top))' }}>
           <div className="px-4 py-2.5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button onClick={() => setSidebarOpen(true)} className="p-1 -ml-1" style={{ color: dark ? 'var(--text-muted)' : 'rgba(255,255,255,0.8)' }}><Menu size={20} /></button>
@@ -184,54 +184,93 @@ function App() {
           )}
         </div>
 
-        {/* Desktop Header */}
-        <div className="hidden md:flex items-center justify-between px-6 lg:px-8 py-5" style={{ background: 'var(--bg-card)', transition: 'background 0.3s' }}>
-          <div>
-            <h2 className="text-base lg:text-lg font-semibold" style={{ color: 'var(--navy)' }}>{cur.label}</h2>
-            <p className="text-xs" style={{ color: 'var(--text-faint)' }}>{cur.desc}</p>
+        {/* Desktop Header (hidden on home) */}
+        {tab !== 'home' && (
+          <div className="hidden md:flex items-center justify-between px-6 lg:px-8 py-5" style={{ background: 'var(--bg-card)', transition: 'background 0.3s' }}>
+            <div>
+              <h2 className="text-base lg:text-lg font-semibold" style={{ color: 'var(--navy)' }}>{cur.label}</h2>
+              <p className="text-xs" style={{ color: 'var(--text-faint)' }}>{cur.desc}</p>
+            </div>
+            <span className="text-xs font-medium" style={{ color: 'var(--gold)' }}>
+              {new Date().toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </span>
           </div>
-          <span className="text-xs font-medium" style={{ color: 'var(--gold)' }}>
-            {new Date().toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </span>
-        </div>
+        )}
 
         {/* Content */}
-        <div className="flex-1 content-area-mobile" style={{ background: 'var(--bg-content)', transition: 'background 0.3s' }}>
+        <div className={`flex-1 ${tab !== 'home' ? 'content-area-mobile' : ''}`} style={{ background: tab === 'home' ? 'transparent' : 'var(--bg-content)', transition: 'background 0.3s' }}>
           <div className="max-w-4xl mx-auto">
 
             {tab === 'home' && (
-              <div className="px-4 md:px-6 lg:px-8 pt-6 pb-4">
-                <div className="card p-5 md:p-6 mb-6 text-center">
-                  <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Majestic" className="w-16 h-16 rounded-full mx-auto mb-3" style={{ border: '2px solid var(--gold)' }} />
-                  <h2 className="text-xl font-medium tracking-[3px] italic" style={{ color: 'var(--navy)', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>MAJESTIC</h2>
-                  <p className="text-xs tracking-widest mt-1" style={{ color: 'var(--gold)' }}>TEA BAR</p>
-                  <div className="divider my-4 mx-auto max-w-[200px]" />
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    {new Date().toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              <div className="min-h-[calc(100vh-56px)] md:min-h-screen flex flex-col items-center justify-center px-6 py-10 -mt-[56px] md:-mt-[61px] relative"
+                style={{ background: 'linear-gradient(160deg, #001a3d 0%, #002e6d 40%, #003878 70%, #002855 100%)' }}>
+
+                {/* Settings gear top-left */}
+                <button onClick={() => setSidebarOpen(true)} className="absolute top-5 left-5 p-2 rounded-xl md:hidden" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  <Menu size={20} />
+                </button>
+
+                {/* Theme toggle top-right */}
+                <button onClick={toggleTheme} className="absolute top-5 right-5 p-2 rounded-xl" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  <span className="theme-icon">{dark ? <Sun size={18} /> : <Moon size={18} />}</span>
+                </button>
+
+                {/* Logo */}
+                <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Majestic"
+                  className="w-24 h-24 md:w-28 md:h-28 rounded-full mb-6"
+                  style={{ border: '3px solid #b8a472', boxShadow: '0 0 40px rgba(184,164,114,0.15)' }} />
+
+                {/* Brand */}
+                <h1 className="text-2xl md:text-3xl font-medium tracking-[6px] italic text-white" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+                  MAJESTIC
+                </h1>
+                <p className="text-xs tracking-[3px] mt-1.5" style={{ color: '#b8a472' }}>TEA BAR</p>
+
+                {/* Divider */}
+                <div className="w-16 h-[2px] my-5" style={{ background: '#b8a472' }} />
+
+                {/* Subtitle */}
+                <p className="text-sm tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  Temperature Log &middot; Food Control Plan
+                </p>
+
+                {/* Date */}
+                <p className="text-sm mt-4 font-medium" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  {new Date().toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+
+                {/* Name input */}
+                <div className="mt-8 w-full max-w-xs">
+                  <p className="text-[10px] font-semibold tracking-[2px] uppercase text-center mb-2" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    Who's Recording?
                   </p>
-                  <p className="text-base font-semibold mt-1" style={{ color: 'var(--text)' }}>
-                    {recorder ? `Hello, ${recorder}` : 'Welcome'}
-                  </p>
-                  {!recorder && (
-                    <button onClick={() => setNameEditing(true)} className="btn-outline mt-3 px-5 py-2 text-xs">Set Your Name</button>
-                  )}
+                  <input type="text" value={recorder} onChange={e => updateRecorder(e.target.value)}
+                    className="w-full text-center py-3.5 px-4 rounded-2xl text-base font-medium outline-none"
+                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
+                    placeholder="Enter your name" />
                 </div>
 
-                <p className="text-[11px] font-semibold tracking-[1.5px] uppercase mb-3" style={{ color: 'var(--gold)' }}>Sections</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                  {ALL_TABS.filter(q => q.id !== 'home').map(q => {
+                {/* Start button */}
+                <button onClick={() => go('temps')}
+                  className="mt-8 px-10 py-3.5 rounded-2xl text-base font-bold tracking-wide active:scale-[0.97] transition-transform"
+                  style={{ background: '#002e6d', color: 'white', border: '1px solid rgba(255,255,255,0.15)', boxShadow: '0 4px 20px rgba(0,46,109,0.5)' }}>
+                  Start Logging
+                </button>
+
+                {/* Quick links */}
+                <div className="flex flex-wrap justify-center gap-2 mt-8">
+                  {[
+                    { id: 'diary' as Tab, label: 'Diary', icon: ClipboardCheck },
+                    { id: 'cleaning' as Tab, label: 'Cleaning', icon: SprayCan },
+                    { id: 'staff' as Tab, label: 'Staff', icon: Users },
+                    { id: 'review' as Tab, label: 'Review', icon: CalendarCheck },
+                  ].map(q => {
                     const Icon = q.icon;
                     return (
                       <button key={q.id} onClick={() => go(q.id)}
-                        className="card w-full flex items-center gap-3.5 p-4 text-left active:scale-[0.99] transition-transform">
-                        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-hover)' }}>
-                          <Icon size={18} style={{ color: 'var(--navy)' }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-semibold" style={{ color: 'var(--navy)' }}>{q.label}</p>
-                          <p className="text-[11px]" style={{ color: 'var(--text-faint)' }}>{q.desc}</p>
-                        </div>
-                        <ChevronRight size={16} style={{ color: 'var(--text-faint)' }} className="flex-shrink-0" />
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold active:scale-[0.96] transition-transform"
+                        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}>
+                        <Icon size={13} /> {q.label}
                       </button>
                     );
                   })}
