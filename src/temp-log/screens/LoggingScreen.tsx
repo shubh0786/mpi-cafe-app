@@ -1,0 +1,158 @@
+import { useState, useMemo, useCallback } from 'react';
+import { format, parseISO } from 'date-fns';
+import { ArrowLeft, ArrowRight, CheckCircle2, ClipboardList, Pencil, Plus, AlertTriangle } from 'lucide-react';
+import { useTempLog } from '../TempLogContext';
+import { FridgeIllustration, ColdVapor } from '../visuals';
+import { AddUnitModal, EditUnitModal, CorrectiveActionModal } from '../modals';
+import { ACCENT } from '../types';
+
+export function LoggingScreen() {
+  const { units, records, recorder, getTemp, setTemp, getTempStatus, setScreen } = useTempLog();
+
+  const [selectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [idx, setIdx] = useState(0);
+  const [showAdd, setShowAdd] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [caModal, setCaModal] = useState<{ unitId: string; date: string } | null>(null);
+
+  const safeIdx = Math.min(idx, Math.max(units.length - 1, 0));
+  const unit = units[safeIdx];
+
+  const dailyProgress = useMemo(() =>
+    units.filter(u => { const t = records.find(r => r.unitId === u.id && r.date === selectedDate)?.temperature; return t !== undefined && t !== ''; }).length,
+  [units, records, selectedDate]);
+
+  const goNext = useCallback(() => {
+    if (!unit) return;
+    const temp = getTemp(unit.id, selectedDate);
+    const status = getTempStatus(unit, temp);
+    if (status === 'warn' && temp) {
+      setCaModal({ unitId: unit.id, date: selectedDate });
+      return;
+    }
+    if (safeIdx < units.length - 1) setIdx(safeIdx + 1);
+    else setScreen('complete');
+  }, [unit, safeIdx, units.length, getTemp, getTempStatus, selectedDate, setScreen]);
+
+  const advanceAfterCa = useCallback(() => {
+    setCaModal(null);
+    if (safeIdx < units.length - 1) setIdx(safeIdx + 1);
+    else setScreen('complete');
+  }, [safeIdx, units.length, setScreen]);
+
+  const goPrev = () => { if (safeIdx > 0) setIdx(safeIdx - 1); };
+  const jumpTo = (i: number) => { setIdx(i); };
+
+  return (
+    <div className="p-4 pb-24">
+      <div className="max-w-lg mx-auto">
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={() => setScreen('landing')} className="p-3 rounded-xl transition-all" style={{ color: 'var(--text-muted)' }} title="Back"><ArrowLeft size={22} /></button>
+          <div className="text-center">
+            <p className="font-bold text-sm" style={{ color: 'var(--navy)' }}>{format(parseISO(selectedDate), 'EEEE')}</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{format(parseISO(selectedDate), 'd MMMM yyyy')}</p>
+          </div>
+          <div className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: 'var(--bg-alt)', color: 'var(--text-muted)' }}>{recorder}</div>
+        </div>
+
+        <div className="card rounded-2xl p-4 mb-4 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold" style={{ color: 'var(--navy)' }}>Progress</span>
+            <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{dailyProgress} of {units.length}</span>
+          </div>
+          <div className="w-full rounded-full h-2.5 overflow-hidden" style={{ background: 'var(--bg-alt)' }}>
+            <div className="h-full rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${(dailyProgress / Math.max(units.length, 1)) * 100}%`, background: dailyProgress === units.length ? '#34d399' : `linear-gradient(90deg, ${ACCENT}, #1a4a8a)` }} />
+          </div>
+          {units.length > 1 && (
+            <div className="flex justify-center gap-1.5 mt-3">
+              {units.map((u, i) => (
+                <button key={u.id} onClick={() => jumpTo(i)} title={u.name} className="rounded-full transition-all duration-300"
+                  style={{ width: i === safeIdx ? 20 : 8, height: 8, background: i === safeIdx ? ACCENT : getTemp(u.id, selectedDate) ? '#34d399' : 'var(--border)', borderRadius: i === safeIdx ? 4 : 999 }} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {units.length === 0 ? (
+          <div className="card rounded-2xl p-10 text-center shadow-sm">
+            <FridgeIllustration size={80} className="mx-auto mb-4 opacity-50" />
+            <p className="font-medium" style={{ color: 'var(--text-muted)' }}>No units added yet</p>
+            <button onClick={() => setShowAdd(true)} className="mt-3 btn-primary min-h-[44px] px-5 rounded-xl text-sm font-bold"><Plus size={16} className="inline mr-1.5" /> Add First Unit</button>
+          </div>
+        ) : (
+          <div>
+            <div className="card rounded-2xl overflow-hidden shadow-sm">
+              <div className="relative p-5 pb-3 flex items-center gap-4" style={{ background: 'var(--bg-alt)' }}>
+                <div className="shrink-0"><FridgeIllustration size={65} /></div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Unit {safeIdx + 1} of {units.length}</p>
+                  <h3 className="text-2xl font-bold truncate" style={{ color: 'var(--navy)' }}>{unit?.name}</h3>
+                  <p className="text-xs font-semibold mt-0.5" style={{ color: 'var(--text-muted)' }}>Range: {unit?.minTemp}°C to {unit?.maxTemp}°C</p>
+                </div>
+                <button onClick={() => unit && setEditId(unit.id)} className="p-2 rounded-xl transition-all shrink-0" style={{ color: 'var(--text-muted)' }} title="Edit"><Pencil size={16} /></button>
+              </div>
+              <div className="px-5 -mt-1"><ColdVapor /></div>
+
+              <div className="p-6 md:p-8 pt-4">
+                <label className="block text-xs font-bold uppercase tracking-widest mb-4 text-center" style={{ color: 'var(--text-muted)' }}>Temperature Reading</label>
+                <div className="relative max-w-[260px] mx-auto">
+                  {(() => {
+                    const temp = getTemp(unit?.id || '', selectedDate);
+                    const status = unit ? getTempStatus(unit, temp) : 'none';
+                    return (
+                      <>
+                        <input type="number" step="0.1" inputMode="decimal" value={temp}
+                          onChange={e => unit && setTemp(unit.id, selectedDate, e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') goNext(); }}
+                          className={`glass-input w-full text-center text-5xl md:text-6xl font-bold min-h-[88px] py-5 rounded-2xl outline-none transition-all ${status === 'warn' ? 'ring-2 ring-amber-400' : ''}`}
+                          placeholder="0.0" autoFocus />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl font-bold pointer-events-none" style={{ color: 'var(--text-muted)' }}>°C</span>
+                        {status === 'warn' && (
+                          <div className="flex items-center justify-center gap-1.5 mt-2 text-amber-500">
+                            <AlertTriangle size={14} /><span className="text-xs font-bold">Out of safe range!</span>
+                          </div>
+                        )}
+                        {status === 'ok' && (
+                          <div className="flex items-center justify-center gap-1.5 mt-2 text-green-500">
+                            <CheckCircle2 size={14} /><span className="text-xs font-bold">Within range</span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+                <p className="text-center text-xs mt-3" style={{ color: 'var(--text-muted)' }}>Enter temp &middot; Press Enter for next</p>
+              </div>
+
+              <div className="p-4 pt-0 flex gap-3">
+                <button onClick={goPrev} disabled={safeIdx === 0} className="flex-1 flex items-center justify-center gap-2 min-h-[44px] py-3.5 rounded-xl font-bold text-sm transition-all disabled:opacity-25 btn-outline"><ArrowLeft size={17} /> Back</button>
+                <button onClick={goNext} className="flex-[1.4] flex items-center justify-center gap-2 min-h-[44px] py-3.5 rounded-xl font-bold text-sm text-white transition-all btn-primary shadow-lg">
+                  {safeIdx === units.length - 1 ? <><CheckCircle2 size={17} /> Finish</> : <><span>Next</span> <ArrowRight size={17} /></>}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {units.length > 0 && (
+          <div className="mt-4 card rounded-2xl p-4 shadow-sm">
+            <span className="flex items-center gap-1.5 text-xs font-bold mb-2" style={{ color: 'var(--navy)' }}><ClipboardList size={14} /> Quick View</span>
+            <div className="flex flex-wrap gap-1.5">
+              {units.map(u => { const t = getTemp(u.id, selectedDate); const s = getTempStatus(u, t); return (
+                <span key={u.id} className={`text-xs px-2.5 py-1 rounded-full font-semibold ${s === 'warn' ? 'bg-amber-100 text-amber-700' : ''}`}
+                  style={s !== 'warn' ? { background: t ? 'rgba(0,46,109,0.08)' : 'var(--bg-alt)', color: t ? ACCENT : 'var(--text-faint)' } : undefined}>
+                  {u.name}: {t ? `${t}°C` : '—'}
+                </span>
+              ); })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {showAdd && <AddUnitModal onClose={() => setShowAdd(false)} />}
+      {editId && <EditUnitModal unitId={editId} onClose={() => setEditId(null)} />}
+      {caModal && <CorrectiveActionModal unitId={caModal.unitId} date={caModal.date} onClose={advanceAfterCa} />}
+    </div>
+  );
+}

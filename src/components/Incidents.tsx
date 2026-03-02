@@ -59,7 +59,7 @@ export default function Incidents({ recorder }: { recorder: string }) {
   const set = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
 
   return (
-    <div className="space-y-4 content-area">
+    <div className="space-y-4 content-area px-4">
       {incidents.length === 0 && (
         <div className="card rounded-2xl p-8 text-center">
           <p className="text-sm" style={{ color: 'var(--text-faint)' }}>No incidents recorded</p>
@@ -120,7 +120,7 @@ export default function Incidents({ recorder }: { recorder: string }) {
                   <p className="text-xs" style={{ color: 'var(--text-faint)' }}>Recorded by {inc.recordedBy}</p>
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteIncident(inc.id); }}
-                    className="w-full py-3 rounded-xl text-sm font-semibold text-red-500 bg-red-50 active:scale-[0.97] transition-all"
+                    className="w-full py-3 min-h-[44px] rounded-xl text-sm font-semibold text-red-500 bg-red-50 active:scale-[0.97] transition-all"
                   >
                     Delete Incident
                   </button>
@@ -167,10 +167,10 @@ export default function Incidents({ recorder }: { recorder: string }) {
                 />
               </div>
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowSheet(false)} className="btn-outline flex-1 py-3 rounded-xl text-sm">
+                <button onClick={() => setShowSheet(false)} className="btn-outline flex-1 py-3 min-h-[44px] rounded-xl text-sm">
                   Cancel
                 </button>
-                <button onClick={addIncident} className="btn-primary flex-1 py-3 rounded-xl text-sm">
+                <button onClick={addIncident} className="btn-primary flex-1 py-3 min-h-[44px] rounded-xl text-sm">
                   Save
                 </button>
               </div>

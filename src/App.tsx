@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Thermometer, ClipboardCheck, SprayCan, Users, MoreHorizontal, MessageSquareWarning, AlertTriangle, CalendarCheck, User, X, Menu, Moon, Sun } from 'lucide-react';
+import { Thermometer, ClipboardCheck, SprayCan, Users, MoreHorizontal, MessageSquareWarning, AlertTriangle, CalendarCheck, User, X, Menu, Moon, Sun, Truck } from 'lucide-react';
 import { loadStr, saveStr } from './lib/storage';
-import TemperatureChecks from './components/TemperatureChecks';
+import TempLogApp from './temp-log/TempLogApp';
 import DailyDiary from './components/DailyDiary';
 import CleaningMaintenance from './components/CleaningMaintenance';
 import StaffTraining from './components/StaffTraining';
 import CustomerComplaints from './components/CustomerComplaints';
 import Incidents from './components/Incidents';
 import FourWeekReview from './components/FourWeekReview';
+import SuppliersDeliveries from './components/SuppliersDeliveries';
 
-type Tab = 'home' | 'temps' | 'diary' | 'cleaning' | 'staff' | 'complaints' | 'incidents' | 'review';
+type Tab = 'home' | 'temps' | 'diary' | 'cleaning' | 'staff' | 'suppliers' | 'complaints' | 'incidents' | 'review';
 
 const ALL_TABS: { id: Tab; label: string; short: string; icon: typeof Thermometer; desc: string }[] = [
   { id: 'home', label: 'Home', short: 'Home', icon: ClipboardCheck, desc: 'Dashboard' },
@@ -17,13 +18,14 @@ const ALL_TABS: { id: Tab; label: string; short: string; icon: typeof Thermomete
   { id: 'diary', label: 'Daily Diary', short: 'Diary', icon: ClipboardCheck, desc: 'Opening & closing checks' },
   { id: 'cleaning', label: 'Cleaning', short: 'Cleaning', icon: SprayCan, desc: 'Cleaning & maintenance' },
   { id: 'staff', label: 'Staff', short: 'Staff', icon: Users, desc: 'Staff & training records' },
+  { id: 'suppliers', label: 'Suppliers', short: 'Suppliers', icon: Truck, desc: 'Suppliers & delivery records' },
   { id: 'complaints', label: 'Complaints', short: 'Complaints', icon: MessageSquareWarning, desc: 'Customer complaints' },
   { id: 'incidents', label: 'Incidents', short: 'Incidents', icon: AlertTriangle, desc: 'When things go wrong' },
   { id: 'review', label: '4-Week Review', short: 'Review', icon: CalendarCheck, desc: 'Periodic FCP review' },
 ];
 
 const MOBILE_BAR: Tab[] = ['home', 'temps', 'diary', 'cleaning', 'staff'];
-const MORE_IDS: Tab[] = ['complaints', 'incidents', 'review'];
+const MORE_IDS: Tab[] = ['suppliers', 'complaints', 'incidents', 'review'];
 
 function App() {
   const [tab, setTab] = useState<Tab>('home');
@@ -111,7 +113,7 @@ function App() {
         <>
           <div className="fixed inset-0 z-50 md:hidden" style={{ background: 'var(--overlay)' }} onClick={() => setSidebarOpen(false)} />
           <aside className="fixed top-0 left-0 bottom-0 w-72 z-50 md:hidden flex flex-col" style={{ background: 'var(--bg-sidebar)', animation: 'slideRight 0.2s ease' }}>
-            <div className="p-4 flex items-center justify-between">
+            <div className="p-4 flex items-center justify-between" style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}>
               <div className="flex items-center gap-3">
                 <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Majestic" className="w-9 h-9 rounded-full" style={{ border: '2px solid var(--gold)' }} />
                 <span className="text-[15px] font-medium tracking-[3px] italic" style={{ color: 'var(--navy)', fontFamily: "'Cormorant Garamond', Georgia, serif" }}>MAJESTIC</span>
@@ -202,74 +204,103 @@ function App() {
           <div className="max-w-4xl mx-auto">
 
             {tab === 'home' && (
-              <div className="min-h-[calc(100vh-56px)] md:min-h-screen flex flex-col items-center justify-center px-6 py-10 -mt-[56px] md:-mt-[61px] relative"
-                style={{ background: 'linear-gradient(160deg, #001a3d 0%, #002e6d 40%, #003878 70%, #002855 100%)' }}>
-
-                {/* Settings gear top-left */}
-                <button onClick={() => setSidebarOpen(true)} className="absolute top-5 left-5 p-2 rounded-xl md:hidden" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              <div className="splash" style={{ background: dark
+                ? 'linear-gradient(160deg, #0a0e14 0%, #0f1419 40%, #141c24 70%, #0d1117 100%)'
+                : 'linear-gradient(160deg, #f8f7f4 0%, #ffffff 40%, #f5f4f1 70%, #f0efec 100%)'
+              }}>
+                {/* Menu top-left */}
+                <button onClick={() => setSidebarOpen(true)} className="absolute left-3 p-3 rounded-xl md:hidden splash-in"
+                  style={{ color: dark ? 'rgba(255,255,255,0.3)' : 'rgba(0,46,109,0.3)', animationDelay: '1.5s', top: 'max(12px, env(safe-area-inset-top, 12px))' }}>
                   <Menu size={20} />
                 </button>
 
                 {/* Theme toggle top-right */}
-                <button onClick={toggleTheme} className="absolute top-5 right-5 p-2 rounded-xl" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                <button onClick={toggleTheme} className="absolute right-3 p-3 rounded-xl splash-in"
+                  style={{ color: dark ? 'rgba(255,255,255,0.3)' : 'rgba(0,46,109,0.3)', animationDelay: '1.5s', top: 'max(12px, env(safe-area-inset-top, 12px))' }}>
                   <span className="theme-icon">{dark ? <Sun size={18} /> : <Moon size={18} />}</span>
                 </button>
 
-                {/* Logo */}
-                <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Majestic"
-                  className="w-24 h-24 md:w-28 md:h-28 rounded-full mb-6"
-                  style={{ border: '3px solid #b8a472', boxShadow: '0 0 40px rgba(184,164,114,0.15)' }} />
+                {/* Original Logo */}
+                <div className="splash-in mb-6" style={{ animationDelay: '0.2s' }}>
+                  <div className="logo-ring rounded-full">
+                    <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Majestic"
+                      className="w-28 h-28 md:w-32 md:h-32 rounded-full"
+                      style={{ border: '3px solid #b8a472', boxShadow: dark ? '0 0 40px rgba(184,164,114,0.2)' : '0 0 40px rgba(0,46,109,0.1)' }} />
+                  </div>
+                </div>
 
-                {/* Brand */}
-                <h1 className="text-2xl md:text-3xl font-medium tracking-[6px] italic text-white" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+                {/* Brand name */}
+                <h1 className="splash-in text-2xl sm:text-3xl md:text-4xl font-medium tracking-[5px] sm:tracking-[8px] italic"
+                  style={{ color: dark ? 'white' : '#002e6d', fontFamily: "'Cormorant Garamond', Georgia, serif", animationDelay: '0.6s' }}>
                   MAJESTIC
                 </h1>
-                <p className="text-xs tracking-[3px] mt-1.5" style={{ color: '#b8a472' }}>TEA BAR</p>
 
-                {/* Divider */}
-                <div className="w-16 h-[2px] my-5" style={{ background: '#b8a472' }} />
+                <p className="splash-in text-xs tracking-[4px] mt-2" style={{ color: '#b8a472', animationDelay: '0.8s' }}>
+                  TEA BAR
+                </p>
+
+                {/* Shimmer divider */}
+                <div className="splash-in shimmer w-20 h-[2px] my-6" style={{ animationDelay: '1s' }} />
 
                 {/* Subtitle */}
-                <p className="text-sm tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Temperature Log &middot; Food Control Plan
+                <p className="splash-in text-sm tracking-wider" style={{ color: dark ? 'rgba(255,255,255,0.45)' : 'rgba(0,46,109,0.4)', animationDelay: '1.1s' }}>
+                  Food Control Plan
                 </p>
 
                 {/* Date */}
-                <p className="text-sm mt-4 font-medium" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                <p className="splash-in text-sm mt-3 font-medium" style={{ color: dark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)', animationDelay: '1.2s' }}>
                   {new Date().toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
 
-                {/* Name input */}
-                <div className="mt-8 w-full max-w-xs">
-                  <p className="text-[10px] font-semibold tracking-[2px] uppercase text-center mb-2" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                {/* Name */}
+                <div className="splash-in mt-8 w-full max-w-[min(20rem,calc(100vw-3rem))]" style={{ animationDelay: '1.3s' }}>
+                  <p className="text-[10px] font-semibold tracking-[2px] uppercase text-center mb-2.5"
+                    style={{ color: dark ? 'rgba(255,255,255,0.3)' : 'rgba(0,46,109,0.35)' }}>
                     Who's Recording?
                   </p>
                   <input type="text" value={recorder} onChange={e => updateRecorder(e.target.value)}
                     className="w-full text-center py-3.5 px-4 rounded-2xl text-base font-medium outline-none"
-                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
+                    style={{
+                      background: dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,46,109,0.04)',
+                      border: dark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,46,109,0.12)',
+                      color: dark ? 'white' : '#002e6d',
+                    }}
                     placeholder="Enter your name" />
                 </div>
 
-                {/* Start button */}
+                {/* CTA */}
                 <button onClick={() => go('temps')}
-                  className="mt-8 px-10 py-3.5 rounded-2xl text-base font-bold tracking-wide active:scale-[0.97] transition-transform"
-                  style={{ background: '#002e6d', color: 'white', border: '1px solid rgba(255,255,255,0.15)', boxShadow: '0 4px 20px rgba(0,46,109,0.5)' }}>
+                  className="splash-in mt-8 px-12 py-4 rounded-2xl text-base font-bold tracking-wider active:scale-[0.97] transition-transform"
+                  style={{
+                    background: dark ? 'rgba(212,201,160,0.15)' : '#002e6d',
+                    color: dark ? '#b8a472' : 'white',
+                    border: dark ? '1.5px solid rgba(184,164,114,0.4)' : '1.5px solid #002e6d',
+                    boxShadow: dark ? '0 0 30px rgba(184,164,114,0.1)' : '0 4px 20px rgba(0,46,109,0.25)',
+                    animationDelay: '1.5s',
+                  }}>
                   Start Logging
                 </button>
 
                 {/* Quick links */}
-                <div className="flex flex-wrap justify-center gap-2 mt-8">
+                <div className="splash-in flex flex-wrap justify-center gap-2.5 mt-8" style={{ animationDelay: '1.7s' }}>
                   {[
                     { id: 'diary' as Tab, label: 'Diary', icon: ClipboardCheck },
                     { id: 'cleaning' as Tab, label: 'Cleaning', icon: SprayCan },
                     { id: 'staff' as Tab, label: 'Staff', icon: Users },
+                    { id: 'suppliers' as Tab, label: 'Suppliers', icon: Truck },
+                    { id: 'complaints' as Tab, label: 'Complaints', icon: MessageSquareWarning },
+                    { id: 'incidents' as Tab, label: 'Incidents', icon: AlertTriangle },
                     { id: 'review' as Tab, label: 'Review', icon: CalendarCheck },
                   ].map(q => {
                     const Icon = q.icon;
                     return (
                       <button key={q.id} onClick={() => go(q.id)}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold active:scale-[0.96] transition-transform"
-                        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}>
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-semibold active:scale-[0.96] transition-all"
+                        style={{
+                          background: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,46,109,0.04)',
+                          border: dark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,46,109,0.1)',
+                          color: dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,46,109,0.5)',
+                        }}>
                         <Icon size={13} /> {q.label}
                       </button>
                     );
@@ -278,10 +309,11 @@ function App() {
               </div>
             )}
 
-            {tab === 'temps' && <TemperatureChecks recorder={recorder} />}
+            {tab === 'temps' && <TempLogApp recorder={recorder} />}
             {tab === 'diary' && <DailyDiary recorder={recorder} />}
             {tab === 'cleaning' && <CleaningMaintenance recorder={recorder} />}
             {tab === 'staff' && <StaffTraining recorder={recorder} />}
+            {tab === 'suppliers' && <SuppliersDeliveries recorder={recorder} />}
             {tab === 'complaints' && <CustomerComplaints recorder={recorder} />}
             {tab === 'incidents' && <Incidents recorder={recorder} />}
             {tab === 'review' && <FourWeekReview recorder={recorder} />}

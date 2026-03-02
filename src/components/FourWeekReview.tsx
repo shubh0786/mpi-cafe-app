@@ -81,7 +81,7 @@ export default function FourWeekReview({ recorder }: { recorder: string }) {
   };
 
   return (
-    <div className="space-y-4 content-area">
+    <div className="space-y-4 content-area px-4">
       {reviews.length === 0 && (
         <div className="card rounded-2xl p-8 text-center">
           <p className="text-sm" style={{ color: 'var(--text-faint)' }}>No reviews yet</p>
@@ -141,7 +141,7 @@ export default function FourWeekReview({ recorder }: { recorder: string }) {
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteReview(r.id); }}
-                    className="w-full py-3 rounded-xl text-sm font-semibold text-red-500 bg-red-50 active:scale-[0.97] transition-all mt-2"
+                    className="w-full py-3 min-h-[44px] rounded-xl text-sm font-semibold text-red-500 bg-red-50 active:scale-[0.97] transition-all mt-2"
                   >
                     Delete Review
                   </button>
@@ -164,7 +164,7 @@ export default function FourWeekReview({ recorder }: { recorder: string }) {
             <div className="p-5 space-y-4">
               <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>New Four-Week Review</h3>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Period Start</label>
                   <input
@@ -233,7 +233,7 @@ export default function FourWeekReview({ recorder }: { recorder: string }) {
                 )}
               </div>
 
-              <div className="border-t pt-4 grid grid-cols-2 gap-3" style={{ borderColor: 'var(--border)' }}>
+              <div className="border-t pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ borderColor: 'var(--border)' }}>
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Signed By</label>
                   <input
@@ -257,10 +257,10 @@ export default function FourWeekReview({ recorder }: { recorder: string }) {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowSheet(false)} className="btn-outline flex-1 py-3 rounded-xl text-sm">
+                <button onClick={() => setShowSheet(false)} className="btn-outline flex-1 py-3 min-h-[44px] rounded-xl text-sm">
                   Cancel
                 </button>
-                <button onClick={saveReview} className="btn-primary flex-1 py-3 rounded-xl text-sm">
+                <button onClick={saveReview} className="btn-primary flex-1 py-3 min-h-[44px] rounded-xl text-sm">
                   Save Review
                 </button>
               </div>

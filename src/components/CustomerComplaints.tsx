@@ -68,7 +68,7 @@ export default function CustomerComplaints({ recorder }: { recorder: string }) {
   const set = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
 
   return (
-    <div className="space-y-4 content-area">
+    <div className="space-y-4 content-area px-4">
       {complaints.length === 0 && (
         <div className="card rounded-2xl p-8 text-center">
           <p className="text-sm" style={{ color: 'var(--text-faint)' }}>No complaints recorded</p>
@@ -123,7 +123,7 @@ export default function CustomerComplaints({ recorder }: { recorder: string }) {
                   <p className="text-xs" style={{ color: 'var(--text-faint)' }}>Recorded by {c.recordedBy}</p>
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteComplaint(c.id); }}
-                    className="w-full py-3 rounded-xl text-sm font-semibold text-red-500 bg-red-50 active:scale-[0.97] transition-all"
+                    className="w-full py-3 min-h-[44px] rounded-xl text-sm font-semibold text-red-500 bg-red-50 active:scale-[0.97] transition-all"
                   >
                     Delete Complaint
                   </button>
@@ -154,10 +154,10 @@ export default function CustomerComplaints({ recorder }: { recorder: string }) {
               <AreaField label="Steps to Prevent Recurrence" value={form.prevention} onChange={(v) => set('prevention', v)} />
               <InputField label="Recorded By" value={form.recordedBy} onChange={(v) => set('recordedBy', v)} />
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowSheet(false)} className="btn-outline flex-1 py-3 rounded-xl text-sm">
+                <button onClick={() => setShowSheet(false)} className="btn-outline flex-1 py-3 min-h-[44px] rounded-xl text-sm">
                   Cancel
                 </button>
-                <button onClick={addComplaint} className="btn-primary flex-1 py-3 rounded-xl text-sm">
+                <button onClick={addComplaint} className="btn-primary flex-1 py-3 min-h-[44px] rounded-xl text-sm">
                   Save
                 </button>
               </div>
@@ -195,7 +195,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-center">
       <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{label}</span>
-      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{value}</span>
+      <span className="text-sm truncate min-w-0" style={{ color: 'var(--text-secondary)' }}>{value}</span>
     </div>
   );
 }

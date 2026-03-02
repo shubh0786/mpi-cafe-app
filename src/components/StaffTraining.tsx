@@ -128,7 +128,7 @@ export default function StaffTraining({ recorder: _recorder }: { recorder: strin
   const selectedStaff = detailId ? staff.find((s) => s.id === detailId) : null;
 
   return (
-    <div className="space-y-4 content-area">
+    <div className="space-y-4 content-area px-4">
       <div className="card rounded-2xl p-1.5 flex gap-1">
         {tabs.map((t) => (
           <button
@@ -251,12 +251,12 @@ export default function StaffTraining({ recorder: _recorder }: { recorder: strin
                 <DetailRow label="Phone" value={selectedStaff.phone || '—'} />
               </div>
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setDetailId(null)} className="btn-outline flex-1 py-3 rounded-xl text-sm">
+                <button onClick={() => setDetailId(null)} className="btn-outline flex-1 py-3 min-h-[44px] rounded-xl text-sm">
                   Close
                 </button>
                 <button
                   onClick={() => deleteStaff(selectedStaff.id)}
-                  className="flex-1 py-3 rounded-xl text-sm font-semibold text-white bg-red-500 active:scale-[0.97] transition-all"
+                  className="flex-1 py-3 min-h-[44px] rounded-xl text-sm font-semibold text-white bg-red-500 active:scale-[0.97] transition-all"
                 >
                   Delete Staff
                 </button>
@@ -321,10 +321,10 @@ export default function StaffTraining({ recorder: _recorder }: { recorder: strin
               )}
 
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowSheet(false)} className="btn-outline flex-1 py-3 rounded-xl text-sm">
+                <button onClick={() => setShowSheet(false)} className="btn-outline flex-1 py-3 min-h-[44px] rounded-xl text-sm">
                   Cancel
                 </button>
-                <button onClick={handleSubmit} className="btn-primary flex-1 py-3 rounded-xl text-sm">
+                <button onClick={handleSubmit} className="btn-primary flex-1 py-3 min-h-[44px] rounded-xl text-sm">
                   Save
                 </button>
               </div>
@@ -357,7 +357,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-center py-2 border-b last:border-0" style={{ borderColor: 'var(--border)' }}>
       <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{label}</span>
-      <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>{value}</span>
+      <span className="text-sm font-medium truncate min-w-0" style={{ color: 'var(--text)' }}>{value}</span>
     </div>
   );
 }

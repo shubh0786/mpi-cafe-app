@@ -96,7 +96,7 @@ export default function CleaningMaintenance({ recorder }: { recorder: string }) 
   const entries = tab === 'cleaning' ? cleaningEntries : maintenanceEntries;
 
   return (
-    <div className="space-y-4 content-area">
+    <div className="space-y-4 content-area px-4">
       <div className="card rounded-2xl p-1.5 flex gap-1">
         <button
           onClick={() => setTab('cleaning')}
@@ -212,10 +212,10 @@ export default function CleaningMaintenance({ recorder }: { recorder: string }) 
                 />
               </div>
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowSheet(false)} className="btn-outline flex-1 py-3 rounded-xl text-sm">
+                <button onClick={() => setShowSheet(false)} className="btn-outline flex-1 py-3 min-h-[44px] rounded-xl text-sm">
                   Cancel
                 </button>
-                <button onClick={handleSubmit} className="btn-primary flex-1 py-3 rounded-xl text-sm">
+                <button onClick={handleSubmit} className="btn-primary flex-1 py-3 min-h-[44px] rounded-xl text-sm">
                   Save
                 </button>
               </div>
