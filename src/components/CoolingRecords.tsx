@@ -206,7 +206,7 @@ export default function CoolingRecords({ recorder }: { recorder: string }) {
       });
     }
 
-    const tableEndY = (doc as unknown as Record<string, number>).lastAutoTable?.finalY ?? 56;
+    const tableEndY = ((doc as any).lastAutoTable?.finalY as number) ?? 56;
 
     if (checks.length > 0) {
       doc.setFontSize(12);

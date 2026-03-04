@@ -178,7 +178,7 @@ export default function CookingValidation({ recorder }: { recorder: string }) {
       });
     }
 
-    const tableEndY = (doc as unknown as Record<string, number>).lastAutoTable?.finalY ?? 50;
+    const tableEndY = ((doc as any).lastAutoTable?.finalY as number) ?? 50;
 
     if (checks.length > 0) {
       doc.setFontSize(12);
