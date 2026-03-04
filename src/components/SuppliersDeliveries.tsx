@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { load, save } from '../lib/storage';
-import { Plus, ChevronDown, ChevronUp, Truck, Building2, Pencil, Trash2, CheckCircle2, XCircle, AlertTriangle, Phone, Mail, Package } from 'lucide-react';
+import { Plus, ChevronDown, ChevronUp, Truck, Building2, Pencil, Trash2, CheckCircle2, XCircle, AlertTriangle, Phone, Mail, Package, FileText, ExternalLink, ShieldCheck } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 
 interface Supplier {
@@ -12,6 +14,9 @@ interface Supplier {
   productsSupplied: string;
   approved: boolean;
   notes: string;
+  registrationNumber: string;
+  registrationType: string;
+  registrationVerified: boolean;
 }
 
 interface DeliveryRecord {
@@ -34,7 +39,7 @@ const SUPPLIERS_KEY = 'cafe-suppliers';
 const DELIVERIES_KEY = 'cafe-deliveries';
 
 function emptySupplier(): Supplier {
-  return { id: '', name: '', contactPerson: '', phone: '', email: '', productsSupplied: '', approved: true, notes: '' };
+  return { id: '', name: '', contactPerson: '', phone: '', email: '', productsSupplied: '', approved: true, notes: '', registrationNumber: '', registrationType: '', registrationVerified: false };
 }
 
 function emptyDelivery(recorder: string): DeliveryRecord {
@@ -141,6 +146,32 @@ export default function SuppliersDeliveries({ recorder }: { recorder: string }) 
 
   const getSupplierName = (id: string) => suppliers.find(s => s.id === id)?.name || 'Unknown';
 
+  const exportSuppliersPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape' });
+    doc.setFontSize(16);
+    doc.text('Approved Supplier List', 14, 18);
+    doc.setFontSize(9);
+    doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy HH:mm')}`, 14, 24);
+    autoTable(doc, {
+      startY: 30,
+      head: [['Supplier', 'Contact', 'Phone', 'Email', 'Products', 'MPI Reg #', 'Reg Type', 'Verified', 'Status']],
+      body: suppliers.map(s => [
+        s.name,
+        s.contactPerson,
+        s.phone,
+        s.email,
+        s.productsSupplied,
+        s.registrationNumber || '—',
+        s.registrationType || '—',
+        s.registrationVerified ? 'Yes' : 'No',
+        s.approved ? 'Approved' : 'Pending',
+      ]),
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [15, 23, 42] },
+    });
+    doc.save(`suppliers-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
   return (
     <div className="space-y-4 content-area px-4 p-4 pb-24 min-h-screen" style={{ background: 'var(--bg-alt)' }}>
       <div className="section-header flex items-center gap-2">
@@ -161,9 +192,17 @@ export default function SuppliersDeliveries({ recorder }: { recorder: string }) 
 
       {activeTab === 'suppliers' && (
         <div className="space-y-3">
-          <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-            MPI requires an approved supplier list with contact details. Keep this up to date.
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+              MPI requires an approved supplier list with contact details. Keep this up to date.
+            </p>
+            {suppliers.length > 0 && (
+              <button type="button" onClick={exportSuppliersPDF}
+                className="btn-outline min-h-[44px] px-3 rounded-xl text-xs font-medium flex items-center gap-1 shrink-0">
+                <FileText size={14} /> Export PDF
+              </button>
+            )}
+          </div>
           {suppliers.length === 0 ? (
             <div className="card rounded-2xl p-8 text-center shadow-sm" style={{ color: 'var(--text)' }}>
               <Building2 size={32} className="mx-auto mb-2 opacity-30" />
@@ -196,6 +235,10 @@ export default function SuppliersDeliveries({ recorder }: { recorder: string }) 
                       <DetailRow label="Phone" value={s.phone} icon={<Phone size={13} />} />
                       <DetailRow label="Email" value={s.email} icon={<Mail size={13} />} />
                       <DetailRow label="Products" value={s.productsSupplied} icon={<Package size={13} />} />
+                      <DetailRow label="MPI Reg #" value={s.registrationNumber} icon={<FileText size={13} />} />
+                      <DetailRow label="Reg Type" value={s.registrationType} icon={<FileText size={13} />} />
+                      <DetailRow label="Verified" value={s.registrationVerified ? 'Verified' : 'Not Verified'}
+                        icon={s.registrationVerified ? <ShieldCheck size={13} className="text-green-500" /> : <AlertTriangle size={13} className="text-amber-500" />} />
                       <DetailRow label="Status" value={s.approved ? 'Approved' : 'Pending Approval'} icon={s.approved ? <CheckCircle2 size={13} className="text-green-500" /> : <AlertTriangle size={13} className="text-amber-500" />} />
                       {s.notes && <DetailRow label="Notes" value={s.notes} />}
                       <div className="flex gap-2 mt-3 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
@@ -299,6 +342,27 @@ export default function SuppliersDeliveries({ recorder }: { recorder: string }) 
             </h3>
             <div className="space-y-3">
               <InputField label="Supplier Name *" value={supplierForm.name} onChange={v => setSupplierForm({ ...supplierForm, name: v })} placeholder="e.g. Bidfood, Gilmours" />
+              <InputField label="MPI Registration Number" value={supplierForm.registrationNumber} onChange={v => setSupplierForm({ ...supplierForm, registrationNumber: v })} placeholder="e.g. RMP012345" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>Registration Type</label>
+                  <select value={supplierForm.registrationType} onChange={e => setSupplierForm({ ...supplierForm, registrationType: e.target.value })}
+                    className="glass-input w-full min-h-[44px] px-4 rounded-xl" style={{ color: 'var(--text)' }}>
+                    <option value="">Select type</option>
+                    <option value="RMP">RMP</option>
+                    <option value="Food Act">Food Act</option>
+                    <option value="Importer">Importer</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="flex flex-col justify-end gap-2">
+                  <CheckItem label="Registration Verified" checked={supplierForm.registrationVerified} onChange={v => setSupplierForm({ ...supplierForm, registrationVerified: v })} />
+                  <a href="https://registers.mpi.govt.nz/FoodActOperators" target="_blank" rel="noopener noreferrer"
+                    className="btn-outline min-h-[44px] px-3 rounded-xl text-xs font-medium flex items-center justify-center gap-1">
+                    <ExternalLink size={14} /> Check MPI Register
+                  </a>
+                </div>
+              </div>
               <InputField label="Contact Person" value={supplierForm.contactPerson} onChange={v => setSupplierForm({ ...supplierForm, contactPerson: v })} placeholder="Primary contact name" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <InputField label="Phone" value={supplierForm.phone} onChange={v => setSupplierForm({ ...supplierForm, phone: v })} type="tel" placeholder="Phone number" inputMode="tel" />

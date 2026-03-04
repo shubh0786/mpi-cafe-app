@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Thermometer, ClipboardCheck, SprayCan, Users, MoreHorizontal, MessageSquareWarning, AlertTriangle, CalendarCheck, User, X, Menu, Moon, Sun, Truck } from 'lucide-react';
+import { Thermometer, ClipboardCheck, SprayCan, Users, MoreHorizontal, MessageSquareWarning, AlertTriangle, CalendarCheck, User, X, Menu, Moon, Sun, Truck, Flame, Snowflake, ShieldAlert } from 'lucide-react';
 import { loadStr, saveStr } from './lib/storage';
 import TempLogApp from './temp-log/TempLogApp';
 import DailyDiary from './components/DailyDiary';
@@ -9,8 +9,12 @@ import CustomerComplaints from './components/CustomerComplaints';
 import Incidents from './components/Incidents';
 import FourWeekReview from './components/FourWeekReview';
 import SuppliersDeliveries from './components/SuppliersDeliveries';
+import AllergenRegister from './components/AllergenRegister';
+import CookingValidation from './components/CookingValidation';
+import CoolingRecords from './components/CoolingRecords';
+import Calibration from './components/Calibration';
 
-type Tab = 'home' | 'temps' | 'diary' | 'cleaning' | 'staff' | 'suppliers' | 'complaints' | 'incidents' | 'review';
+type Tab = 'home' | 'temps' | 'diary' | 'cleaning' | 'staff' | 'suppliers' | 'allergens' | 'cooking' | 'cooling' | 'calibration' | 'complaints' | 'incidents' | 'review';
 
 const ALL_TABS: { id: Tab; label: string; short: string; icon: typeof Thermometer; desc: string }[] = [
   { id: 'home', label: 'Home', short: 'Home', icon: ClipboardCheck, desc: 'Dashboard' },
@@ -19,13 +23,17 @@ const ALL_TABS: { id: Tab; label: string; short: string; icon: typeof Thermomete
   { id: 'cleaning', label: 'Cleaning', short: 'Cleaning', icon: SprayCan, desc: 'Cleaning & maintenance' },
   { id: 'staff', label: 'Staff', short: 'Staff', icon: Users, desc: 'Staff & training records' },
   { id: 'suppliers', label: 'Suppliers', short: 'Suppliers', icon: Truck, desc: 'Suppliers & delivery records' },
+  { id: 'allergens', label: 'Allergens', short: 'Allergens', icon: ShieldAlert, desc: 'Allergen register' },
+  { id: 'cooking', label: 'Cooking', short: 'Cooking', icon: Flame, desc: 'Cooking process validation' },
+  { id: 'cooling', label: 'Cooling', short: 'Cooling', icon: Snowflake, desc: 'Cooling temperature records' },
+  { id: 'calibration', label: 'Calibration', short: 'Calibrate', icon: Thermometer, desc: 'Thermometer calibration' },
   { id: 'complaints', label: 'Complaints', short: 'Complaints', icon: MessageSquareWarning, desc: 'Customer complaints' },
   { id: 'incidents', label: 'Incidents', short: 'Incidents', icon: AlertTriangle, desc: 'When things go wrong' },
   { id: 'review', label: '4-Week Review', short: 'Review', icon: CalendarCheck, desc: 'Periodic FCP review' },
 ];
 
 const MOBILE_BAR: Tab[] = ['home', 'temps', 'diary', 'cleaning', 'staff'];
-const MORE_IDS: Tab[] = ['suppliers', 'complaints', 'incidents', 'review'];
+const MORE_IDS: Tab[] = ['suppliers', 'allergens', 'cooking', 'cooling', 'calibration', 'complaints', 'incidents', 'review'];
 
 function App() {
   const [tab, setTab] = useState<Tab>('home');
@@ -288,6 +296,10 @@ function App() {
                     { id: 'cleaning' as Tab, label: 'Cleaning', icon: SprayCan },
                     { id: 'staff' as Tab, label: 'Staff', icon: Users },
                     { id: 'suppliers' as Tab, label: 'Suppliers', icon: Truck },
+                    { id: 'allergens' as Tab, label: 'Allergens', icon: ShieldAlert },
+                    { id: 'cooking' as Tab, label: 'Cooking', icon: Flame },
+                    { id: 'cooling' as Tab, label: 'Cooling', icon: Snowflake },
+                    { id: 'calibration' as Tab, label: 'Calibration', icon: Thermometer },
                     { id: 'complaints' as Tab, label: 'Complaints', icon: MessageSquareWarning },
                     { id: 'incidents' as Tab, label: 'Incidents', icon: AlertTriangle },
                     { id: 'review' as Tab, label: 'Review', icon: CalendarCheck },
@@ -314,6 +326,10 @@ function App() {
             {tab === 'cleaning' && <CleaningMaintenance recorder={recorder} />}
             {tab === 'staff' && <StaffTraining recorder={recorder} />}
             {tab === 'suppliers' && <SuppliersDeliveries recorder={recorder} />}
+            {tab === 'allergens' && <AllergenRegister recorder={recorder} />}
+            {tab === 'cooking' && <CookingValidation recorder={recorder} />}
+            {tab === 'cooling' && <CoolingRecords recorder={recorder} />}
+            {tab === 'calibration' && <Calibration recorder={recorder} />}
             {tab === 'complaints' && <CustomerComplaints recorder={recorder} />}
             {tab === 'incidents' && <Incidents recorder={recorder} />}
             {tab === 'review' && <FourWeekReview recorder={recorder} />}

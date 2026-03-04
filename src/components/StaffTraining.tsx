@@ -1,7 +1,25 @@
 import { useState, useEffect } from 'react';
 import { load, save } from '../lib/storage';
-import { Plus, Trash2, Users, BookOpen, Thermometer, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Users, BookOpen, Thermometer, ChevronRight, CheckCircle2, XCircle, Grid3X3, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+const TFCP_TOPICS = [
+  'Temperature control (fridge/chiller)',
+  'Cooking poultry & minced meat',
+  'Cooling and freezing',
+  'Reheating food',
+  'Food allergen management',
+  'Thermometer calibration',
+  'Suppliers and receiving goods',
+  'Cleaning and sanitising',
+  'Personal hygiene',
+  'Health and sickness',
+  'Food storage and stock rotation',
+  'Cross contamination prevention',
+  'Complaint handling',
+];
 
 interface StaffMember {
   id: string;
@@ -17,6 +35,7 @@ interface TrainingRecord {
   staffId: string;
   staffName: string;
   topic: string;
+  competent: boolean;
   employeeSigned: string;
   supervisorSigned: string;
   date: string;
@@ -30,14 +49,14 @@ interface SicknessRecord {
   actionTaken: string;
 }
 
-type Tab = 'staff' | 'training' | 'sickness';
+type Tab = 'staff' | 'training' | 'sickness' | 'matrix';
 
 const STAFF_KEY = 'cafe-staff-list';
 const TRAINING_KEY = 'cafe-training-records';
 const SICKNESS_KEY = 'cafe-sickness-log';
 
-export default function StaffTraining({ recorder: _recorder }: { recorder: string }) {
-  void _recorder;
+export default function StaffTraining({ recorder }: { recorder: string }) {
+  void recorder;
   const [tab, setTab] = useState<Tab>('staff');
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [training, setTraining] = useState<TrainingRecord[]>([]);
@@ -46,18 +65,19 @@ export default function StaffTraining({ recorder: _recorder }: { recorder: strin
   const [detailId, setDetailId] = useState<string | null>(null);
 
   const [staffForm, setStaffForm] = useState({ name: '', position: '', startDate: format(new Date(), 'yyyy-MM-dd'), email: '', phone: '' });
-  const [trainingForm, setTrainingForm] = useState({ staffId: '', topic: '', employeeSigned: '', supervisorSigned: '', date: format(new Date(), 'yyyy-MM-dd') });
+  const [trainingForm, setTrainingForm] = useState({ staffId: '', topic: '', customTopic: '', competent: true, employeeSigned: '', supervisorSigned: '', date: format(new Date(), 'yyyy-MM-dd') });
   const [sicknessForm, setSicknessForm] = useState({ name: '', symptoms: '', date: format(new Date(), 'yyyy-MM-dd'), actionTaken: '' });
 
   useEffect(() => {
     setStaff(load<StaffMember[]>(STAFF_KEY, []));
-    setTraining(load<TrainingRecord[]>(TRAINING_KEY, []));
+    const raw = load<TrainingRecord[]>(TRAINING_KEY, []);
+    setTraining(raw.map((r) => ({ ...r, competent: r.competent ?? true })));
     setSickness(load<SicknessRecord[]>(SICKNESS_KEY, []));
   }, []);
 
   const openSheet = () => {
     if (tab === 'staff') setStaffForm({ name: '', position: '', startDate: format(new Date(), 'yyyy-MM-dd'), email: '', phone: '' });
-    if (tab === 'training') setTrainingForm({ staffId: staff[0]?.id || '', topic: '', employeeSigned: '', supervisorSigned: '', date: format(new Date(), 'yyyy-MM-dd') });
+    if (tab === 'training') setTrainingForm({ staffId: staff[0]?.id || '', topic: '', customTopic: '', competent: true, employeeSigned: '', supervisorSigned: '', date: format(new Date(), 'yyyy-MM-dd') });
     if (tab === 'sickness') setSicknessForm({ name: '', symptoms: '', date: format(new Date(), 'yyyy-MM-dd'), actionTaken: '' });
     setShowSheet(true);
   };
@@ -79,12 +99,18 @@ export default function StaffTraining({ recorder: _recorder }: { recorder: strin
   };
 
   const addTraining = () => {
-    if (!trainingForm.topic.trim()) return;
+    const resolvedTopic = trainingForm.topic === '__other__' ? trainingForm.customTopic.trim() : trainingForm.topic;
+    if (!resolvedTopic) return;
     const staffMember = staff.find((s) => s.id === trainingForm.staffId);
     const entry: TrainingRecord = {
       id: crypto.randomUUID(),
-      ...trainingForm,
+      staffId: trainingForm.staffId,
       staffName: staffMember?.name || '',
+      topic: resolvedTopic,
+      competent: trainingForm.competent,
+      employeeSigned: trainingForm.employeeSigned,
+      supervisorSigned: trainingForm.supervisorSigned,
+      date: trainingForm.date,
     };
     const updated = [entry, ...training];
     setTraining(updated);
@@ -119,10 +145,58 @@ export default function StaffTraining({ recorder: _recorder }: { recorder: strin
     else addSickness();
   };
 
+  const exportTrainingPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape' });
+    doc.setFontSize(16);
+    doc.text('Staff Training Records', 14, 18);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 25);
+
+    let yPos = 32;
+    const staffWithRecords = staff.filter((s) => training.some((t) => t.staffId === s.id));
+
+    staffWithRecords.forEach((s) => {
+      const records = training.filter((t) => t.staffId === s.id);
+      if (yPos > 170) {
+        doc.addPage();
+        yPos = 18;
+      }
+      doc.setFontSize(12);
+      doc.text(`${s.name} — ${s.position}`, 14, yPos);
+      yPos += 4;
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Topic', 'Date', 'Competent', 'Employee Signed', 'Supervisor Signed']],
+        body: records.map((r) => [
+          r.topic,
+          r.date,
+          (r.competent ?? true) ? 'Yes' : 'No',
+          r.employeeSigned || '—',
+          r.supervisorSigned || '—',
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: [31, 41, 55] },
+        styles: { fontSize: 9 },
+        margin: { left: 14 },
+      });
+
+      yPos = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+    });
+
+    if (staffWithRecords.length === 0) {
+      doc.setFontSize(11);
+      doc.text('No training records found.', 14, yPos);
+    }
+
+    doc.save(`training-records-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: 'staff', label: 'Staff', icon: <Users size={16} /> },
     { key: 'training', label: 'Training', icon: <BookOpen size={16} /> },
     { key: 'sickness', label: 'Sickness', icon: <Thermometer size={16} /> },
+    { key: 'matrix', label: 'Matrix', icon: <Grid3X3 size={16} /> },
   ];
 
   const selectedStaff = detailId ? staff.find((s) => s.id === detailId) : null;
@@ -172,6 +246,16 @@ export default function StaffTraining({ recorder: _recorder }: { recorder: strin
 
       {tab === 'training' && (
         <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Training Records</h2>
+            <button
+              onClick={exportTrainingPDF}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all active:scale-95"
+              style={{ background: 'var(--navy)', color: 'var(--btn-primary-text)' }}
+            >
+              <Download size={15} /> Export PDF
+            </button>
+          </div>
           {training.length === 0 && (
             <div className="card rounded-2xl p-8 text-center">
               <p className="text-sm" style={{ color: 'var(--text-faint)' }}>No training records yet</p>
@@ -181,7 +265,13 @@ export default function StaffTraining({ recorder: _recorder }: { recorder: strin
             <div key={t.id} className="card rounded-2xl p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate" style={{ color: 'var(--text)' }}>{t.topic}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold truncate" style={{ color: 'var(--text)' }}>{t.topic}</p>
+                    {(t.competent ?? true)
+                      ? <CheckCircle2 size={16} className="shrink-0" style={{ color: '#22c55e' }} />
+                      : <XCircle size={16} className="shrink-0" style={{ color: '#ef4444' }} />
+                    }
+                  </div>
                   <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{t.staffName}</p>
                   <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>{t.date}</p>
                   <div className="flex gap-3 mt-2 text-xs" style={{ color: 'var(--navy)' }}>
@@ -233,9 +323,114 @@ export default function StaffTraining({ recorder: _recorder }: { recorder: strin
         </div>
       )}
 
-      <button onClick={openSheet} className="fab" aria-label="Add new record">
-        <Plus size={26} />
-      </button>
+      {tab === 'matrix' && (
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Training Matrix</h2>
+          {staff.length === 0 ? (
+            <div className="card rounded-2xl p-8 text-center">
+              <p className="text-sm" style={{ color: 'var(--text-faint)' }}>Add staff members to view the matrix</p>
+            </div>
+          ) : (
+            <div className="card rounded-2xl" style={{ overflow: 'hidden' }}>
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: `${200 + staff.length * 100}px` }}>
+                  <thead>
+                    <tr>
+                      <th
+                        style={{
+                          position: 'sticky',
+                          left: 0,
+                          zIndex: 2,
+                          background: 'var(--navy)',
+                          color: 'var(--btn-primary-text)',
+                          padding: '10px 14px',
+                          textAlign: 'left',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          borderBottom: '1px solid var(--border)',
+                          minWidth: '200px',
+                        }}
+                      >
+                        Topic
+                      </th>
+                      {staff.map((s) => (
+                        <th
+                          key={s.id}
+                          style={{
+                            background: 'var(--navy)',
+                            color: 'var(--btn-primary-text)',
+                            padding: '10px 8px',
+                            textAlign: 'center',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            borderBottom: '1px solid var(--border)',
+                            minWidth: '90px',
+                            maxWidth: '120px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {s.name}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {TFCP_TOPICS.map((topic, idx) => (
+                      <tr key={topic} style={{ background: idx % 2 === 0 ? 'var(--card-bg)' : 'var(--surface, var(--card-bg))' }}>
+                        <td
+                          style={{
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 1,
+                            background: 'inherit',
+                            padding: '8px 14px',
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            color: 'var(--text)',
+                            borderBottom: '1px solid var(--border)',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {topic}
+                        </td>
+                        {staff.map((s) => {
+                          const hasCompetent = training.some(
+                            (t) => t.staffId === s.id && t.topic === topic && (t.competent ?? true),
+                          );
+                          return (
+                            <td
+                              key={s.id}
+                              style={{
+                                padding: '8px',
+                                textAlign: 'center',
+                                borderBottom: '1px solid var(--border)',
+                                fontSize: '16px',
+                              }}
+                            >
+                              {hasCompetent
+                                ? <CheckCircle2 size={18} style={{ color: '#22c55e', margin: '0 auto' }} />
+                                : <span style={{ color: 'var(--text-faint)' }}>—</span>
+                              }
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab !== 'matrix' && (
+        <button onClick={openSheet} className="fab" aria-label="Add new record">
+          <Plus size={26} />
+        </button>
+      )}
 
       {selectedStaff && (
         <>
@@ -304,7 +499,55 @@ export default function StaffTraining({ recorder: _recorder }: { recorder: strin
                       ))}
                     </select>
                   </div>
-                  <InputField label="Topic" value={trainingForm.topic} onChange={(v) => setTrainingForm({ ...trainingForm, topic: v })} />
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Topic</label>
+                    <select
+                      value={trainingForm.topic}
+                      onChange={(e) => setTrainingForm({ ...trainingForm, topic: e.target.value })}
+                      aria-label="Topic"
+                      className="glass-input w-full px-4 py-3 rounded-xl text-sm"
+                    >
+                      <option value="">Select a topic…</option>
+                      {TFCP_TOPICS.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                      <option value="__other__">Other (custom)</option>
+                    </select>
+                  </div>
+                  {trainingForm.topic === '__other__' && (
+                    <InputField
+                      label="Custom Topic"
+                      value={trainingForm.customTopic}
+                      onChange={(v) => setTrainingForm({ ...trainingForm, customTopic: v })}
+                    />
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Competent</label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setTrainingForm({ ...trainingForm, competent: true })}
+                        className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.97]"
+                        style={trainingForm.competent
+                          ? { background: '#22c55e', color: '#fff' }
+                          : { background: 'var(--card-bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                        }
+                      >
+                        Yes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTrainingForm({ ...trainingForm, competent: false })}
+                        className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.97]"
+                        style={!trainingForm.competent
+                          ? { background: '#ef4444', color: '#fff' }
+                          : { background: 'var(--card-bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                        }
+                      >
+                        No
+                      </button>
+                    </div>
+                  </div>
                   <InputField label="Employee Signed" value={trainingForm.employeeSigned} onChange={(v) => setTrainingForm({ ...trainingForm, employeeSigned: v })} />
                   <InputField label="Supervisor Signed" value={trainingForm.supervisorSigned} onChange={(v) => setTrainingForm({ ...trainingForm, supervisorSigned: v })} />
                   <InputField label="Date" type="date" value={trainingForm.date} onChange={(v) => setTrainingForm({ ...trainingForm, date: v })} />
